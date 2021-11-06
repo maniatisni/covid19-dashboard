@@ -130,10 +130,10 @@ fig4 = go.Figure()
 fig4.add_trace(
     go.Scatter(
         x=x['date'],
-        y=x['confirmed'],
+        y=x['deaths'],
         name='Cases'
     ))
-fig4['layout'].update(title='Total Confirmed Cases in Greece',xaxis=dict(
+fig4['layout'].update(title='Total Confirmed Deaths in Greece',xaxis=dict(
       tickangle=-30
     ))
 
@@ -187,3 +187,17 @@ fig5['layout'].update(title='Daily Test Positivity Rate (%)',xaxis=dict(
     ))
 
 st.plotly_chart(fig5, use_container_width=True)
+
+fig6 = go.Figure()
+
+fig6.add_trace(
+    go.Scatter(
+        x=comple['date'],
+        y=comple['daily_rapid']+comple['daily_tests'],
+        name='Total Daily Tests (PCR + Rapid)'
+    ))
+fig6['layout'].update(title='Total Daily Tests (PCR + Rapid)',xaxis=dict(
+      tickangle=-30
+    ))
+
+st.plotly_chart(fig6, use_container_width=True)
