@@ -9,9 +9,16 @@ pd.options.plotting.backend = "plotly"
 
 
 ### Set Title Page, Header and Subheader
-st.set_page_config(page_title = "Greece Covid-19 Data Analysis")
-st.header('Greece Covid-19 Data Analysis')
-st.subheader("Nikos Maniatis")
+st.set_page_config(page_title = "Coronavirus Data Charts - Greece")
+st.header('Coronavirus Data Charts - Greece')
+st.markdown("by [Nikos Maniatis](https://github.com/maniatisni)")
+
+text = """
+Here is another Dashboard with some useful charts about the Coronavirus pandemic in Greece.
+Data provided by the [Coronavirus Greek API](https://covid-19-greece.herokuapp.com/), which is updated daily.   
+All charts are interactive and can be enlarged.
+"""
+st.markdown(text)
 
 ### Get "all" data from Coronavirus Greek API.
 ### It contains info about:
