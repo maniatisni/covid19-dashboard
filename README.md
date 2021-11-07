@@ -7,19 +7,18 @@ You can visit the site here!
 https://maniatisni-covid-dashboard.herokuapp.com/
 
 
-.\\
-.\\
-.\\
-.\\
-.\\
-.\\
-.\\
 
 
-Note to self:
-If I want to change something,
-go to the project folder,
-`git add .` or `git add <file.py>`
-`git commit -m "message"`
-`git push heroku master`
+
+
+
+
+
+
+Note to self:\
+If I want to change something,\
+go to the project folder,\
+`git add .` or `git add <file.py>`\
+`git commit -m "message"`\
+`git push heroku master`\
 
