@@ -15,7 +15,7 @@ https://maniatisni-covid-dashboard.herokuapp.com/
 
 
 
-Note to self:\
+**Note to self:**\
 If I want to change something,\
 go to the project folder,\
 `git add .` or `git add <file.py>`\
