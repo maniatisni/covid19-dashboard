@@ -20,5 +20,5 @@ If I want to change something,\
 go to the project folder,\
 `git add .` or `git add <file.py>`\
 `git commit -m "message"`\
-`git push heroku master`\
+`git push heroku master`
 
