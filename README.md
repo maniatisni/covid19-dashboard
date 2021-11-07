@@ -7,14 +7,15 @@ You can visit the site here!
 https://maniatisni-covid-dashboard.herokuapp.com/
 
 
-.
-.
-.
-.
-.
-.
-.
-.
+.\\
+.\\
+.\\
+.\\
+.\\
+.\\
+.\\
+
+
 Note to self:
 If I want to change something,
 go to the project folder,
