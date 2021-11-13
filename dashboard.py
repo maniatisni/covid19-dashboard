@@ -13,9 +13,10 @@ st.set_page_config(page_title = "Coronavirus Data Charts - Greece")
 st.header('Coronavirus Data Charts - Greece')
 st.markdown("by [Nikos Maniatis](https://github.com/maniatisni)")
 
+
 text = """
 Here is another Dashboard with some useful charts about the Coronavirus pandemic in Greece.
-Data provided by the [Coronavirus Greek API](https://covid-19-greece.herokuapp.com/), which is updated daily.   
+Data provided by the [Coronavirus Greek API](https://covid-19-greece.herokuapp.com/), which is updated daily.
 All charts are interactive and can be enlarged.
 """
 st.markdown(text)
@@ -151,7 +152,56 @@ fig6['layout'].update(title='Total Daily Tests (PCR + Rapid)',xaxis=dict(
     ))
 
 st.plotly_chart(fig6, use_container_width=True)
+############################
+#CASES BY 100K PEOPLE BY REGION#
+############################
+#Get Data from API
+url = 'https://covid-19-greece.herokuapp.com/regions'
+response = requests.get(url)
+jsondata = response.json()
 
+#Prepare columns to read with pandas
+regions = pd.DataFrame.from_dict(jsondata['regions'])
+columns=['area_en','area_gr','cases_per_100000_people',
+                 'geo_department_en','geo_department_gr','last_updated_at',
+                 'latitude','longitude','population','region_en',
+                 'region_gr','total_cases']
+# read with pandas
+data = []
+for k in jsondata['regions']:
+    data.append([k['area_en'],k['area_gr'],k['cases_per_100000_people'],
+                 k['geo_department_en'],k['geo_department_gr'],k['last_updated_at'],
+                 k['latitude'],k['longtitude'],k['population'],k['region_en'],
+                 k['region_gr'],k['total_cases']])
+
+regions = pd.DataFrame(data,columns=columns)
+
+# Barplot
+figg = px.bar(regions.sort_values(by='cases_per_100000_people',ascending = False),
+             x='area_en', y='cases_per_100000_people',
+            hover_data=['area_gr', 'cases_per_100000_people','last_updated_at','total_cases','population'],
+            color='total_cases',
+            labels={
+                     "area_en": "Region",
+                     "cases_per_100000_people": "Cases per 100.000 People",
+                     "last_updated_at": "Data Last Updated at",
+                     "population": "Population",
+                     "total_cases": "Total Cases",
+                     "area_gr": "ΝΟΜΟΣ"
+                 },)
+note = """
+NOTE: This is a plot showing cases per 100.000 people,
+however, some regions have a population smaller than 100.000,
+so the resulting "cases per 100k people" is calculated by estimating
+the percentage of the population that has tested positive and then assuming that the population is 100.000.
+The Color bar shows the absolute number of cases.
+"""
+figg['layout'].update(title='Cases per 100.000 people by Region - Color is total number of cases',
+xaxis=dict(
+      tickangle=-45
+    ))
+st.plotly_chart(figg, use_container_width = True)
+st.caption(note)
 
 ################################################
 ### GET DATA ABOUT CASES IN INTENSIVE CARE ###
