@@ -1,5 +1,6 @@
 # Covid19 Dashboard
-This is a Covid-19 dashboard made with Python and the streamlit framework.
+This is a Coronavirus dashboard made with Python and the [Streamlit framework](https://github.com/streamlit/streamlit),
+as a personal project.
 
 Data Taken from the Greek [COVID19 API](https://github.com/Covid-19-Response-Greece/covid19-greece-api).
 
