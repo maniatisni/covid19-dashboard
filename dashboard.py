@@ -3,38 +3,33 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import requests
+import datetime
 from PIL import Image
 import plotly.graph_objects as go
 pd.options.plotting.backend = "plotly"
 
+## This is a functions that gets the response from the Greek API and returns a pandas dataframe.
+url = 'https://covid-19-greece.herokuapp.com/'
+def request_to_pandas(url, endpoint):
+    # Join url with endpoint
+    full_url = str(url+endpoint)
+    # Get Response
+    response = requests.get(full_url)
+    # Json
+    jsondata = response.json()
+    key = list(jsondata.keys())[0]
+    columns = list(jsondata[key][0].keys())
+    temp = []
+    for k in jsondata[key]:
+        temp.append([k[j] for j in columns])
+    return pd.DataFrame(temp,columns=columns)
 
-### Set Title Page, Header and Subheader
-st.set_page_config(page_title = "Coronavirus Data Charts - Greece")
-st.header('Coronavirus Data Charts - Greece')
-st.markdown("by [Nikos Maniatis](https://github.com/maniatisni)")
-
-
-text = """
-Here is another Dashboard with some useful charts about the Coronavirus pandemic in Greece.
-Data provided by the [Coronavirus Greek API](https://covid-19-greece.herokuapp.com/), which is updated daily.
-All charts are interactive and can be enlarged.
-"""
-st.markdown(text)
 
 ### Get "all" data from Coronavirus Greek API.
 ### It contains info about:
 ### 1. Confirmed Cases 2. Confirmed Deaths 3. Dates
-url = "https://covid-19-greece.herokuapp.com/all"
-response = requests.get(url)
-jsondata = response.json()
+df = request_to_pandas(url, endpoint='all')
 
-### Read the JSON data into a pandas dataframe.
-columns=['confirmed','date','deaths']
-df = pd.DataFrame.from_dict(jsondata['cases'])
-data = []
-for x in jsondata['cases']:
-    data.append([x['confirmed'],x['date'],x['deaths']])
-df = pd.DataFrame(data,columns=columns)
 
 ### Calculate Daily cases/deaths from cumulative data.
 df['daily_cases'] = df['confirmed'] - df['confirmed'].shift(1)
@@ -45,6 +40,7 @@ df['daily_cases'] = pd.to_numeric(df['daily_cases'],downcast='integer')
 df['daily_deaths'] = pd.to_numeric(df['daily_deaths'],downcast='integer')
 ### Convert Date column to datetime.
 df['date'] = pd.to_datetime(df['date'],format='%Y-%m-%d')
+
 
 ##################################
 #### DAILY CASES WITH M.A. PLOT###
@@ -80,24 +76,15 @@ fig['layout'].update(title='Daily Cases in Greece\n with Moving Averages',xaxis=
       tickangle=-30
     ))
 
-# Put the chart on the dashboard.
-st.plotly_chart(fig,use_container_width=True)
+
 
 ############################
 #TESTS AND POSITIVITY RATE#
 ############################
 
 ### Get info about the total tests from the same API.
-url = "https://covid-19-greece.herokuapp.com/total-tests"
-response = requests.get(url)
-jsondata = response.json()
-### Convert the JSON data to pandas dataframe.
-columns=['date','rapid-tests','tests']
-tests = pd.DataFrame.from_dict(jsondata['total_tests'])
-data_ = []
-for k in jsondata['total_tests']:
-    data_.append([k['date'],k['rapid-tests'],k['tests']])
-tests = pd.DataFrame(data_,columns=columns)
+tests = request_to_pandas(url, endpoint='total-tests')
+
 # Remove NaNs.
 tests['tests'] = tests['tests'].replace(np.nan,0).astype(int)
 tests['date'] = pd.to_datetime(tests['date'],format='%Y-%m-%d')
@@ -137,7 +124,6 @@ fig5['layout'].update(title='Daily Test Positivity Rate (%)',xaxis=dict(
       tickangle=-30
     ))
 
-st.plotly_chart(fig5, use_container_width=True)
 
 fig6 = go.Figure()
 
@@ -151,30 +137,11 @@ fig6['layout'].update(title='Total Daily Tests (PCR + Rapid)',xaxis=dict(
       tickangle=-30
     ))
 
-st.plotly_chart(fig6, use_container_width=True)
 ############################
 #CASES BY 100K PEOPLE BY REGION#
 ############################
 #Get Data from API
-url = 'https://covid-19-greece.herokuapp.com/regions'
-response = requests.get(url)
-jsondata = response.json()
-
-#Prepare columns to read with pandas
-regions = pd.DataFrame.from_dict(jsondata['regions'])
-columns=['area_en','area_gr','cases_per_100000_people',
-                 'geo_department_en','geo_department_gr','last_updated_at',
-                 'latitude','longitude','population','region_en',
-                 'region_gr','total_cases']
-# read with pandas
-data = []
-for k in jsondata['regions']:
-    data.append([k['area_en'],k['area_gr'],k['cases_per_100000_people'],
-                 k['geo_department_en'],k['geo_department_gr'],k['last_updated_at'],
-                 k['latitude'],k['longtitude'],k['population'],k['region_en'],
-                 k['region_gr'],k['total_cases']])
-
-regions = pd.DataFrame(data,columns=columns)
+regions = request_to_pandas(url, endpoint = 'regions')
 
 # Barplot
 figg = px.bar(regions.sort_values(by='cases_per_100000_people',ascending = False),
@@ -189,38 +156,19 @@ figg = px.bar(regions.sort_values(by='cases_per_100000_people',ascending = False
                      "total_cases": "Total Cases",
                      "area_gr": "ΝΟΜΟΣ"
                  },)
-note = """
-NOTE: This is a plot showing cases per 100.000 people,
-however, some regions have a population smaller than 100.000,
-so the resulting "cases per 100k people" is calculated by estimating
-the percentage of the population that has tested positive and then assuming that the population is 100.000.
-The Color bar shows the absolute number of cases.
-"""
+
 figg['layout'].update(title='Cases per 100.000 people by Region - Color is total number of cases',
 xaxis=dict(
       tickangle=-45
     ))
-st.plotly_chart(figg, use_container_width = True)
-st.caption(note)
+
 
 ################################################
 ### GET DATA ABOUT CASES IN INTENSIVE CARE ###
 ################################################
 
 ### Get Data from same API.
-url = "https://covid-19-greece.herokuapp.com/intensive-care"
-response = requests.get(url)
-jsondata = response.json()
-
-### Convert JSON data to pandas dataframe.
-columns=['date','intensive_care']
-meth = pd.DataFrame.from_dict(jsondata['cases'])
-data_ = []
-for k in jsondata['cases']:
-    data_.append([k['date'],k['intensive_care']])
-meth = pd.DataFrame(data_,columns=columns)
-
-
+meth = request_to_pandas(url, endpoint = 'intensive-care')
 ### Make the Plot.
 
 fig7 = go.Figure()
@@ -235,7 +183,6 @@ fig7['layout'].update(title='Number of Cases in Intensive Care',xaxis=dict(
       tickangle=-30
     ))
 
-st.plotly_chart(fig7, use_container_width=True)
 
 
 ##################################
@@ -273,7 +220,6 @@ fig2['layout'].update(title='Daily Deaths in Greece\n with Moving Averages',xaxi
       tickangle=-30
     ))
 
-st.plotly_chart(fig2,use_container_width=True)
 
 ##################################
 #### TOTAL CONFIRMED CASES PLOT###
@@ -291,7 +237,6 @@ fig3['layout'].update(title='Total Confirmed Cases in Greece',xaxis=dict(
       tickangle=-30
     ))
 
-st.plotly_chart(fig3, use_container_width=True)
 
 
 ##################################
@@ -310,4 +255,68 @@ fig4['layout'].update(title='Total Confirmed Deaths in Greece',xaxis=dict(
       tickangle=-30
     ))
 
+
+
+current_date = datetime.datetime.strptime(str(df.iloc[-1].date).split()[0], '%Y-%m-%d').strftime('%A, %B %d, %Y')
+##################################
+#### PAGE SETUP######
+#################################
+
+### Set Title Page, Header and Subheader
+st.set_page_config(page_title = "Coronavirus Data Charts - Greece")
+st.header('Coronavirus Data Charts - Greece')
+st.markdown("by [Nikos Maniatis](https://github.com/maniatisni)")
+
+
+text = """
+Here is another Dashboard with some useful charts about the Coronavirus pandemic in Greece.
+Data provided by the [Coronavirus Greek API](https://covid-19-greece.herokuapp.com/), which is updated daily.
+All charts are interactive and can be enlarged.
+"""
+st.markdown(text)
+st.markdown("---")
+##################################
+#### TEXT AND STATS###
+##################################
+st.header("Daily Statistics")
+st.write(current_date)
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Cases", int(df.iloc[-1].daily_cases), \
+"{}%".format(round(100*(df.iloc[-1].daily_cases-df.iloc[-2].daily_cases)/df.iloc[-2].daily_cases,1)),delta_color="inverse")
+
+col2.metric("Deaths", int(df.iloc[-1].daily_deaths),\
+ "{}%".format(round(100*(df.iloc[-1].daily_deaths-df.iloc[-2].daily_deaths)/df.iloc[-2].daily_deaths,1)),delta_color="inverse")
+col3.metric("Positivity Rate","{}%".format(round(comple['positivity'].iloc[-1],2)),\
+"{}%".format(round(100*(comple.iloc[-1].positivity-comple.iloc[-2].positivity)/comple.iloc[-2].positivity,1)), delta_color = 'inverse')
+
+total_tests = comple.iloc[-1].daily_tests + comple.iloc[-1].daily_rapid
+total_tests_yesterday = comple.iloc[-2].daily_tests + comple.iloc[-2].daily_rapid
+col4.metric("Total Tests (PCR + Rapid)", int(total_tests),\
+"{}%".format(round(100*(total_tests - total_tests_yesterday)/total_tests_yesterday,1)),delta_color = 'off' )
+
+
+#### NOW DEPLOY THE CHARTS IN WHATEVER ORDER WE PREFER
+# DAILY CASES WITH MOVING AVERAGES
+st.plotly_chart(fig,use_container_width=True)
+# DAILY TEST POSITIVITY RATE
+st.plotly_chart(fig5, use_container_width=True)
+# TOTAL DAILY TESTS (PCR+RAPID)
+st.plotly_chart(fig6, use_container_width=True)
+# CASES PER 100K PEOPLE - BY Region
+st.plotly_chart(figg, use_container_width = True)
+note = """
+NOTE: This is a plot showing cases per 100.000 people,
+however, some regions have a population smaller than 100.000,
+so the resulting "cases per 100k people" is calculated by estimating
+the percentage of the population that has tested positive and then assuming that the population is 100.000.
+The Color bar shows the absolute number of cases.
+"""
+st.caption(note)
+# NUMBER OF CASES IN INTENSIVE CARE
+st.plotly_chart(fig7, use_container_width=True)
+# DAILY DEATHS WITH MOVING AVERAGES
+st.plotly_chart(fig2,use_container_width=True)
+# TOTAL CONFIRMED CASES
+st.plotly_chart(fig3, use_container_width=True)
+# TOTAL CONFIRMED DEATHS
 st.plotly_chart(fig4, use_container_width=True)
