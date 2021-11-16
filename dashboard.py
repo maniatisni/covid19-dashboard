@@ -6,6 +6,8 @@ import requests
 import datetime
 from PIL import Image
 import plotly.graph_objects as go
+import geopandas as gpd
+import matplotlib.pyplot as plt
 pd.options.plotting.backend = "plotly"
 
 ## This is a functions that gets the response from the Greek API and returns a pandas dataframe.
@@ -149,7 +151,7 @@ figg = px.bar(regions.sort_values(by='cases_per_100000_people',ascending = False
             hover_data=['area_gr', 'cases_per_100000_people','last_updated_at','total_cases','population'],
             color='total_cases',
             labels={
-                     "area_en": "Region",
+                     "area_en": "District",
                      "cases_per_100000_people": "Cases per 100.000 People",
                      "last_updated_at": "Data Last Updated at",
                      "population": "Population",
@@ -157,7 +159,7 @@ figg = px.bar(regions.sort_values(by='cases_per_100000_people',ascending = False
                      "area_gr": "ΝΟΜΟΣ"
                  },)
 
-figg['layout'].update(title='Cases per 100.000 people by Region - Color is total number of cases',
+figg['layout'].update(title='Cases per 100.000 people by District (Νομοί) - Color is total number of cases',
 xaxis=dict(
       tickangle=-45
     ))
@@ -254,8 +256,38 @@ fig4.add_trace(
 fig4['layout'].update(title='Total Confirmed Deaths in Greece',xaxis=dict(
       tickangle=-30
     ))
+###################
+####### MAP #######
+###################
+gr = gpd.read_file("gadm36_GRC_shp/gadm36_GRC_2.shp")
+gdf_points = gpd.GeoDataFrame(regions, geometry=gpd.points_from_xy(regions.longtitude, regions.latitude))
 
+gr['NAME_2'] = gr['NAME_2'].replace({'Athos':'Mount Athos',
+                  'West Macedonia':'Western Macedonia',
+                  'East Macedonia and Thrace':'Eastern Macedonia and Thrace',
+                  'West Greece':'Western Greece',
+                  })
+plt.style.use('default')
+plt.rcParams.update({"figure.facecolor":"#0E1117",
+                     "axes.edgecolor":"#0E1117",
+                     "axes.facecolor":"#0E1117",
+                     "text.color":"white",
+                     "axes.labelcolor":"white",
+                     "xtick.color":"white",
+                     "ytick.color":"white"
+                     })
 
+mee = gdf_points.merge(gr, left_on='region_en', right_on ='NAME_2')
+mee = gpd.GeoDataFrame(mee,geometry='geometry_y')
+mee['casesper100k'] = 1e5*mee['total_cases']/mee['population']
+figmap,base = plt.subplots(dpi=200)
+base.set_aspect('equal')
+mee.plot(color='white',edgecolor='#0E1117',figsize=(10, 10),ax=base)
+mee.plot(column='casesper100k',legend=True,cmap='inferno',ax=base,\
+    legend_kwds={'label':"Cases per 100K Population - by Region (Περιφέρεια)",'orientation':'horizontal'})
+base.axis('off')
+base.set_title("Last Updated on: {}".format(regions.iloc[-1].last_updated_at),fontsize=5,fontdict={"color":"white"})
+#style_kwds = {'edgecolor':'#0E1117','facecolor':'#0E1117'}
 
 current_date = datetime.datetime.strptime(str(df.iloc[-1].date).split()[0], '%Y-%m-%d').strftime('%A, %B %d, %Y')
 ##################################
@@ -295,7 +327,14 @@ col4.metric("Total Tests (PCR + Rapid)", int(total_tests),\
 "{}%".format(round(100*(total_tests - total_tests_yesterday)/total_tests_yesterday,1)),delta_color = 'off' )
 
 
+
+
+
 #### NOW DEPLOY THE CHARTS IN WHATEVER ORDER WE PREFER
+## GREECE MAPS
+st.markdown("---")
+
+st.pyplot(figmap)
 # DAILY CASES WITH MOVING AVERAGES
 st.plotly_chart(fig,use_container_width=True)
 # DAILY TEST POSITIVITY RATE
@@ -306,7 +345,7 @@ st.plotly_chart(fig6, use_container_width=True)
 st.plotly_chart(figg, use_container_width = True)
 note = """
 NOTE: This is a plot showing cases per 100.000 people,
-however, some regions have a population smaller than 100.000,
+however, some districts have a population smaller than 100.000,
 so the resulting "cases per 100k people" is calculated by estimating
 the percentage of the population that has tested positive and then assuming that the population is 100.000.
 The Color bar shows the absolute number of cases.
