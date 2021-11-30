@@ -19,6 +19,8 @@ regions = regions_data()
 meth = intensive_care_data()
 # geographic data
 mee = geo_data(regions)
+# global from second API
+global_second = global_with_population()
 
 ################################
 # Cases with Moving Averages Plot #
@@ -200,3 +202,33 @@ def figure_9(regions,mee):
     base.axis('off')
     base.set_title("Last Updated on: {}".format(regions.iloc[-1].last_updated_at),fontsize=5,fontdict={"color":"white"})
     return fig_9
+
+def figure_10(global_pop):
+    fig_10 = go.Figure()
+    fig_10 = px.bar(global_pop.sort_values(by='Cases-per-100k',ascending = False),
+                x='Country_Region', y='Cases-per-100k',hover_data=['Cases-per-100k','Confirmed','pop_est'],
+              labels = {'Country_Region': 'Country',
+                       'Cases-per-100k':'Cases per 100,000 population',
+                       'Confirmed': 'Confirmed Cases',
+                       'pop_est':'Population'})
+
+    fig_10['layout'].update(title='Cases per 100K population',
+    xaxis=dict(
+        tickangle=-45))
+
+    return fig_10
+
+def figure_11(global_pop):
+    fig_11 = go.Figure()
+    fig_11 = px.bar(global_pop.sort_values(by='Deaths-per-100k',ascending = False),
+                x='Country_Region', y='Deaths-per-100k',hover_data=['Deaths-per-100k','Deaths','pop_est'],
+              labels = {'Country_Region': 'Country',
+                       'Deaths-per-100k':'Deaths per 100,000 population',
+                       'Deaths': 'Confirmed Deaths',
+                       'pop_est':'Population'})
+
+    fig_11['layout'].update(title='Deaths per 100K population',
+    xaxis=dict(
+        tickangle=-45))
+
+    return fig_11

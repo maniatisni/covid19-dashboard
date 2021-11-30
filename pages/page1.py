@@ -4,22 +4,22 @@ from plots import *
 
 def app():
     ### Set Title Page, Header and Subheader
-    st.header('Coronavirus Data Charts - Greece')
+    st.header('Coronavirus Pandemic Dashboard')
     st.markdown("by [Nikos Maniatis](https://github.com/maniatisni)")
     df = cases_data()
     current_date = datetime.datetime.strptime(str(df.iloc[-1].date).split()[0], '%Y-%m-%d').strftime('%A, %B %d, %Y')
 
     text = """
-    Here is another Dashboard with some useful charts about the Coronavirus pandemic in Greece.
-    Data provided by the [Coronavirus Greek API](https://covid-19-greece.herokuapp.com/), which is updated daily.
-    All charts are interactive and can be enlarged.
+    Here is another Dashboard with some useful charts about the Coronavirus pandemic.
+    Data regarding Greece are provided by the [Coronavirus Greek API](https://covid-19-greece.herokuapp.com/),
+    while Global Data are provided by the [Johns Hopkins University](https://github.com/CSSEGISandData/COVID-19) and [Esri API](https://coronavirus-resources.esri.com/datasets/1cb306b5331945548745a5ccd290188e_1/api).
     """
     st.markdown(text)
     st.markdown("---")
     ##################################
     #### TEXT AND STATS###
     ##################################
-    st.header("Daily Statistics")
+    st.header("Daily Statistics for Greece")
     st.write(current_date)
     ## Create Useful Stats dashboard
     col1, col2, col3, col4 = st.columns(4)

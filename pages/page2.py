@@ -4,7 +4,7 @@ from preprocessing import *
 from plots import * 
 
 def app():
-    st.title("Charts")
+    st.title("Greece - Charts")
     # Get data:
     cases = cases_data()
     comple = tests_data()

@@ -4,7 +4,7 @@ from preprocessing import *
 from plots import * 
 
 def app():
-    st.title("Regional Charts")
+    st.title("Greece - Regional Charts")
     regions = regions_data()
     geo = geo_data(regions)
     fig_9 = figure_9(regions,geo)

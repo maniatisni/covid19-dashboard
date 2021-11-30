@@ -133,3 +133,73 @@ def geo_data(regions):
     mee = gpd.GeoDataFrame(mee,geometry='geometry_y')
     mee['casesper100k'] = 1e5*mee['total_cases']/mee['population']
     return mee
+
+
+################################################
+# GLOBAL DATA FROM JOHN HOPKINS UNIVERSITY #
+################################################
+
+def get_global_timeseries():
+    # URLs
+    url_1 = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv'
+    url_2 = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
+    # Read Data
+    cases = pd.read_csv(url_1)
+    deaths = pd.read_csv(url_2)
+    # Convert from wide to long format
+    cases = pd.melt(cases, id_vars=['Province/State','Country/Region'], value_vars = list(cases.iloc[:,4:].columns),
+               value_name = 'Confirmed',var_name = 'Date')
+    deaths = pd.melt(deaths, id_vars=['Province/State','Country/Region'], value_vars = list(deaths.iloc[:,4:].columns),
+               value_name = 'Deaths',var_name = 'Date')
+    # Merge
+    total = cases.merge(deaths, how = 'left', on = ['Date', 'Province/State','Country/Region'])
+    # to DateTime
+    total['Date'] = pd.to_datetime(total['Date'],format='%m/%d/%y')
+    # group by date and country
+    total = total.groupby(by=['Date','Country/Region'],as_index=False).sum()
+    return total
+
+def country_daily(data, country):
+    """
+    Helper function, to pick a country and calc daily stats
+    """
+    country_df = data.loc[data['Country/Region'] == country]
+    country_df['Daily-Cases'] = country_df['Confirmed'] - country_df['Confirmed'].shift(1)
+    country_df['Daily-Deaths'] = country_df['Deaths'] - country_df['Deaths'].shift(1)
+    country_df.loc[country_df.Date == '2020-01-22','Daily-Cases'] = 0
+    country_df.loc[country_df.Date == '2020-01-22','Daily-Deaths'] = 0
+    return country_df
+
+################################################
+# GLOBAL DATA FROM API WITH POPULATION DATA #
+################################################
+
+def global_with_population():
+    # Get first dataset:
+    url = "https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/ncov_cases2_v1/FeatureServer/2/query?where=1%3D1&outFields=*&outSR=4326&f=json"
+    response = requests.get(url)
+    jsondata = response.json()
+    # do it
+    columns = ['Country_Region','Last_Update','Lat','Long_','Confirmed','Deaths','Recovered','Active','Incident_Rate',
+          'People_Tested','People_Hospitalized','Mortality_Rate','UID','ISO3']
+    data = []
+    df = pd.DataFrame.from_dict(jsondata['features'][0])
+    for x in jsondata['features']:
+        x = x['attributes']
+        data.append([x['Country_Region'], x['Last_Update'],x['Lat'],x['Long_'],x['Confirmed'],
+                    x['Deaths'],x['Recovered'],x['Active'],x['Incident_Rate'],x['People_Tested'],
+                    x['People_Hospitalized'],x['Mortality_Rate'],x['UID'],x['ISO3']] )
+    df = pd.DataFrame(data,columns=columns)
+    df = df.drop(columns=['Recovered', 'Active','People_Tested','People_Hospitalized','Last_Update'],axis=1)
+    # convert to gpd dataframe
+    df_gpd = gpd.GeoDataFrame(df,geometry=gpd.points_from_xy(df.Long_, df.Lat))
+    # Get World Data
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    # MERGE
+    merged = df_gpd.merge(world, left_on = 'ISO3',right_on='iso_a3')
+    merged = gpd.GeoDataFrame(merged,geometry='geometry_y')
+    # Data per 100K pop
+    merged['Cases-per-100k'] = 100000*merged['Confirmed']/merged['pop_est']
+    merged['Deaths-per-100k'] = 100000*merged['Deaths']/merged['pop_est']
+
+    return merged
